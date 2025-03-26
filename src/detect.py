@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/jetson/anaconda3/envs/trashcan_2025/bin/python
 
 import rospy
 import cv2
@@ -31,7 +31,7 @@ from utils.general import (
     scale_coords
 )
 from utils.plots import Annotator, colors
-from utils.torch_utils import select_device
+from utils.torch_utils import select_device, time_sync
 from utils.augmentations import letterbox
 
 
@@ -80,29 +80,33 @@ class Yolov5Detector:
 
         if self.compressed_input:
             self.image_sub = rospy.Subscriber(
-                input_image_topic, CompressedImage, self.callback, queue_size=1
+                input_image_topic, CompressedImage, self.callback, queue_size=1, buff_size=2**24
             )
         else:
             self.image_sub = rospy.Subscriber(
-                input_image_topic, Image, self.callback, queue_size=1
+                input_image_topic, Image, self.callback, queue_size=1, buff_size=2**24
             )
 
         # Initialize prediction publisher
         self.pred_pub = rospy.Publisher(
-            rospy.get_param("~output_topic"), BoundingBoxes, queue_size=10
+            rospy.get_param("~output_topic"), BoundingBoxes, queue_size=1
         )
         # Initialize image publisher
         self.publish_image = rospy.get_param("~publish_image")
         if self.publish_image:
             self.image_pub = rospy.Publisher(
-                rospy.get_param("~output_image_topic"), Image, queue_size=10
+                rospy.get_param("~output_image_topic"), Image, queue_size=1
             )
         
         # Initialize CV_Bridge
         self.bridge = CvBridge()
 
+        rospy.loginfo("Yolov5 detector initialize complete!")
+
     def callback(self, data):
         """adapted from yolov5/detect.py"""
+        rospy.logdebug("Received image message!")
+        t1 = time_sync()
         # print(data.header)
         if self.compressed_input:
             im = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding="bgr8")
@@ -129,7 +133,7 @@ class Yolov5Detector:
         ### To-do move pred to CPU and fill BoundingBox messages
         
         # Process predictions 
-        det = pred[0].cpu().numpy()
+        det = pred[0]
 
         bounding_boxes = BoundingBoxes()
         bounding_boxes.header = data.header
@@ -165,6 +169,9 @@ class Yolov5Detector:
 
             # Stream results
             im0 = annotator.result()
+
+        t2 = time_sync()
+        rospy.logdebug(f"Detection time: {t2-t1:.3f}s")
 
         # Publish prediction
         self.pred_pub.publish(bounding_boxes)

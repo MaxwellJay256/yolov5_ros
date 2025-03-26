@@ -2,7 +2,8 @@
     <!-- Detection configuration -->
     <arg name="weights" default="yolov5m.pt" />
     <arg name="data" default="$(find yolov5_ros)/src/yolov5/data/coco128.yaml" />
-    <arg name="confidence_threshold" default="0.75" />
+    <!-- 运行：0.75 / 0.45, 测试：0.25 / 0.4-->
+    <arg name="confidence_threshold" default="0.5" />
     <arg name="iou_threshold" default="0.45" />
     <arg name="maximum_detections" default="1000" />
     <arg name="device" default="0" />
@@ -28,26 +29,26 @@
 
 
     <node pkg="yolov5_ros" name="detect" type="detect.py" output="screen">
-        <param name="weights" value="$(arg weights)" />
-        <param name="data" value="$(arg data)" />
+        <param name="weights" value="$(find yolov5_ros)/src/yolov5/weights/best_0322.pt" />
+        <param name="data" value="$(find yolov5_ros)/src/yolov5/data/data.yaml" />
         <param name="confidence_threshold" value="$(arg confidence_threshold)" />
         <param name="iou_threshold" value="$(arg iou_threshold)" />
         <param name="maximum_detections" value="$(arg maximum_detections)" />
         <param name="device" value="$(arg device)" />
         <param name="agnostic_nms" value="$(arg agnostic_nms)" />
-        <param name="line_thickness" value="$(arg line_thickness)" />
+        <param name="line_thickness" value="2" />
         <param name="dnn" value="$(arg dnn)" />
         <param name="half" value="$(arg half)" />
 
         <param name="inference_size_h" value="$(arg inference_size_h)" />
         <param name="inference_size_w" value="$(arg inference_size_w)" />
 
-        <param name="input_image_topic" value="$(arg input_image_topic)" />
+        <param name="input_image_topic" value="/app/image_raw" />
         <param name="output_topic" value="$(arg output_topic)" />
 
-        <param name="view_image" value="$(arg view_image)" />
+        <param name="view_image" value="false" />
 
-        <param name="publish_image" value="$(arg publish_image)" />
+        <param name="publish_image" value="true" />
         <param name="output_image_topic" value="$(arg output_image_topic)" />
     </node>
 
